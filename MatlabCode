@@ -1,0 +1,438 @@
+%C. Michael Collins' Matlab Code for EiM 
+%Will use LDA, SVM, & Naive Bayes (NB) methods to classify 
+
+Fs = 200; %Frequency sampling rate used 
+n = 13; %# of participants
+mydata = cell(1, n);
+    mydata{1} = importdata('P1.mat');
+    mydata{2} = importdata('P2.mat');
+    mydata{3} = importdata('P3.mat');
+    mydata{4} = importdata('P4.mat');
+    mydata{5} = importdata('P5.mat');
+    mydata{6} = importdata('P6.mat');
+    mydata{7} = importdata('P7.mat');
+    mydata{8} = importdata('P8.mat');
+    mydata{9} = importdata('P9.mat');
+    mydata{10} = importdata('P10.mat');
+    mydata{11} = importdata('P11.mat');
+    mydata{12} = importdata('P12.mat');
+    mydata{13} = importdata('P13.mat');
+    
+    load fisheriris
+    load ionosphere
+    %Feature Extraction: Use Bandpower for 30 Hz from 200 Hz sampling rate
+    data=mydata;
+    Pr1 = bandpower(mydata{1}{1}(1:end,1:19),Fs, [Fs/10 Fs/4]);
+    Pl1 = bandpower(mydata{1}{2}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pp1 = bandpower(mydata{1}{3}(1:end,1:19), Fs, [Fs/10 Fs/4]); 
+    Pr2 = bandpower(mydata{2}{1}(1:end,1:19),Fs, [Fs/10 Fs/4]);
+    Pl2 = bandpower(mydata{2}{2}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pp2 = bandpower(mydata{2}{3}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pr3 = bandpower(mydata{3}{1}(1:end,1:19),Fs, [Fs/10 Fs/4]);
+    Pl3 = bandpower(mydata{3}{2}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pp3 = bandpower(mydata{3}{3}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pr4 = bandpower(mydata{4}{1}(1:end,1:19),Fs, [Fs/10 Fs/4]);
+    Pl4 = bandpower(mydata{4}{2}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pp4 = bandpower(mydata{4}{3}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pr5 = bandpower(mydata{5}{1}(1:end,1:19),Fs, [Fs/10 Fs/4]);
+    Pl5 = bandpower(mydata{5}{2}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pp5 = bandpower(mydata{5}{3}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pr6 = bandpower(mydata{6}{1}(1:end,1:19),Fs, [Fs/10 Fs/4]);
+    Pl6 = bandpower(mydata{6}{2}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pp6 = bandpower(mydata{6}{3}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pr7 = bandpower(mydata{7}{1}(1:end,1:19),Fs, [Fs/10 Fs/4]);
+    Pl7 = bandpower(mydata{7}{2}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pp7 = bandpower(mydata{7}{3}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pr8 = bandpower(mydata{8}{1}(1:end,1:19),Fs, [Fs/10 Fs/4]);
+    Pl8 = bandpower(mydata{8}{2}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pp8 = bandpower(mydata{8}{3}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pr9 = bandpower(mydata{9}{1}(1:end,1:19),Fs, [Fs/10 Fs/4]);
+    Pl9 = bandpower(mydata{9}{2}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pp9 = bandpower(mydata{9}{3}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pr10 = bandpower(mydata{10}{1}(1:end,1:19),Fs, [Fs/10 Fs/4]);
+    Pl10 = bandpower(mydata{10}{2}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pp10 = bandpower(mydata{10}{3}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pr11 = bandpower(mydata{11}{1}(1:end,1:19),Fs, [Fs/10 Fs/4]);
+    Pl11 = bandpower(mydata{11}{2}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pp11 = bandpower(mydata{11}{3}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pr12 = bandpower(mydata{12}{1}(1:end,1:19),Fs, [Fs/10 Fs/4]);
+    Pl12 = bandpower(mydata{12}{2}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pp12 = bandpower(mydata{12}{3}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pr13 = bandpower(mydata{13}{1}(1:end,1:19),Fs, [Fs/10 Fs/4]);
+    Pl13 = bandpower(mydata{13}{2}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    Pp13 = bandpower(mydata{13}{3}(1:end,1:19), Fs, [Fs/10 Fs/4]);
+    
+R = [Pr1; Pr2; Pr3; Pr4; Pr5; Pr6; Pr7; Pr8; Pr9; Pr10; Pr11; Pr12; Pr13];
+Le = [Pl1; Pl2; Pl3; Pl4; Pl5; Pl6; Pl7; Pl8; Pl9; Pl10; Pl11; Pl12; Pl13];
+P_p = [Pp1;Pp2;Pp3;Pp4;Pp5;Pp6;Pp7;Pp8;Pp9;Pp10;Pp11;Pp12;Pp13];
+    %LDA: Fisher's LDA: Right vs Left
+A_LDA = [];
+for w = 1:n
+    loop = [transpose(R(w,:)); transpose(Le(w,:))];
+    all_data_label=[];
+    for k = 1:length(loop)
+        if k <= 19
+            all_data_label = [all_data_label; 'Right'];
+        else
+            all_data_label = [all_data_label; 'Left '];
+        end
+    end
+    testing_ind = [];
+    for u = 1:length(loop)
+        if rand>0.8
+            testing_ind = [testing_ind, u];
+        end
+    end
+    training_ind = setxor(1:length(loop),testing_ind);
+    [ldaClass,err,P,logp,coeff] = classify(loop(testing_ind,:), loop(training_ind,:), all_data_label(training_ind,:),'linear');
+    [ldaResubCM,grpOrder] = confusionmat(all_data_label(testing_ind,:),ldaClass);
+    %K-Fold for LDA
+    obj = fitcdiscr(loop, all_data_label);
+    cvmodel_LDA = crossval(obj);
+    A_LDA = [A_LDA; 1-kfoldLoss(cvmodel_LDA)];
+end
+
+%LDA for Left vs Passive 
+
+LP_LDA = [];
+for w = 1:n
+    loop = [transpose(Le(w,:)); transpose(P_p(w,:))];
+    all_data_label=[];
+    for k = 1:length(loop)
+        if k <= 19
+            all_data_label = [all_data_label; 'Left '];
+        else
+            all_data_label = [all_data_label; 'Pass '];
+        end
+    end
+    testing_ind = [];
+    for u = 1:length(loop)
+        if rand>0.8
+            testing_ind = [testing_ind, u];
+        end
+    end
+    training_ind = setxor(1:length(loop),testing_ind);
+    [ldaClass,err,P,logp,coeff] = classify(loop(testing_ind,:), loop(training_ind,:), all_data_label(training_ind,:),'linear');
+    [ldaResubCM,grpOrder] = confusionmat(all_data_label(testing_ind,:),ldaClass);
+    %K-Fold for LDA
+    obj = fitcdiscr(loop, all_data_label);
+    cvmodel_LDA = crossval(obj);
+    LP_LDA = [LP_LDA; 1-kfoldLoss(cvmodel_LDA)];
+end
+
+%LDA Right vs Passive
+RP_LDA = [];
+for w = 1:n
+    loop = [transpose(R(w,:)); transpose(P_p(w,:))];
+    all_data_label=[];
+    for k = 1:length(loop)
+        if k <= 19
+            all_data_label = [all_data_label; 'Right'];
+        else
+            all_data_label = [all_data_label; 'Pass '];
+        end
+    end
+    testing_ind = [];
+    for u = 1:length(loop)
+        if rand>0.8
+            testing_ind = [testing_ind, u];
+        end
+    end
+    training_ind = setxor(1:length(loop),testing_ind);
+    [ldaClass,err,P,logp,coeff] = classify(loop(testing_ind,:), loop(training_ind,:), all_data_label(training_ind,:),'linear');
+    [ldaResubCM,grpOrder] = confusionmat(all_data_label(testing_ind,:),ldaClass);
+    %K-Fold for LDA
+    obj = fitcdiscr(loop, all_data_label);
+    cvmodel_LDA = crossval(obj);
+    RP_LDA = [RP_LDA; 1-kfoldLoss(cvmodel_LDA)];
+end
+
+%SVM
+
+%Preparing dataset
+rng(1);
+
+%Binary Classifier 
+RL_SVM = [];
+RLc_SVM = [];
+for w = 1:n
+loop_SVM = [transpose(R(w,:)) ; transpose(Le(w,:))];
+X = loop_SVM(1:end,:);
+SVM_label = [];
+    for k = 1:length(loop_SVM)
+        if k <= 19
+            SVM_label = [SVM_label; 'Right'];
+        else
+            SVM_label = [SVM_label; 'Left '];
+        end
+    end
+species_num = grp2idx(SVM_label);
+y = species_num(1:end); 
+
+%80:20
+rand_num = randperm(38); 
+X_train = X(rand_num(1:30),:);
+y_train = y(rand_num(1:30),:);
+
+X_test = X(rand_num(31:end),:);
+y_test = y(rand_num(31:end),:);
+
+%CV Partition 
+
+c = cvpartition(y_train,'Kfold',5);
+
+% Feature Selection
+opts = statset('display','iter');
+fun = @(train_data, train_labels,test_data,test_labels)...
+       sum(predict(fitcsvm(train_data,train_labels,'KernelFunction','rbf'), test_data) == test_labels);
+[fs, history] = sequentialfs(fun, X_train,y_train,'cv',c,'options',opts,'nfeatures',1);
+
+%Best hyperparameters
+X_train_best = X_train(:,fs);
+
+Mdl = fitcsvm(X_train_best,y_train,'Standardize',true,'KernelFunction','RBF',...
+    'KernelScale','auto');
+
+%Test 
+CVSVMModel = crossval(Mdl);
+LPi_SVM = 1-kfoldLoss(CVSVMModel);
+
+X_best = X_test(:,fs);
+RL_SVM = [RL_SVM; 1-loss(Mdl,X_best,y_test)];
+RLc_SVM = [RLc_SVM; 1-LPi_SVM];
+end
+
+%Binary Classifier 
+LP_SVM = [];
+LPc_SVM = [];
+for w = 1:n
+loop_SVM = [transpose(Le(w,:)) ; transpose(P_p(w,:))];
+X = loop_SVM(1:end,:);
+SVM_label = [];
+    for k = 1:length(loop_SVM)
+        if k <= 19
+            SVM_label = [SVM_label; 'Right'];
+        else
+            SVM_label = [SVM_label; 'Left '];
+        end
+    end
+species_num = grp2idx(SVM_label);
+y = species_num(1:end); 
+
+%80:20
+rand_num = randperm(38); 
+X_train = X(rand_num(1:30),:);
+y_train = y(rand_num(1:30),:);
+
+X_test = X(rand_num(31:end),:);
+y_test = y(rand_num(31:end),:);
+
+%CV Partition 
+
+c = cvpartition(y_train,'Kfold',5);
+
+% Feature Selection
+opts = statset('display','iter');
+fun = @(train_data, train_labels,test_data,test_labels)...
+       sum(predict(fitcsvm(train_data,train_labels,'KernelFunction','rbf'), test_data) == test_labels);
+[fs, history] = sequentialfs(fun, X_train,y_train,'cv',c,'options',opts,'nfeatures',1);
+
+%Best hyperparameters
+X_train_best = X_train(:,fs);
+
+Mdl = fitcsvm(X_train_best,y_train,'Standardize',true,'KernelFunction','RBF',...
+    'KernelScale','auto');
+
+%Test 
+CVSVMModel = crossval(Mdl);
+LPi_SVM = 1-kfoldLoss(CVSVMModel);
+
+X_best = X_test(:,fs);
+LP_SVM = [LP_SVM; 1-loss(Mdl,X_best,y_test)];
+LPc_SVM = [LPc_SVM; 1-LPi_SVM];
+end
+
+%Binary Classifier 
+RP_SVM = [];
+RPc_SVM = [];
+for w = 1:n
+loop_SVM = [transpose(R(w,:)) ; transpose(P_p(w,:))];
+X = loop_SVM(1:end,:);
+SVM_label = [];
+    for k = 1:length(loop_SVM)
+        if k <= 19
+            SVM_label = [SVM_label; 'Right'];
+        else
+            SVM_label = [SVM_label; 'Left '];
+        end
+    end
+species_num = grp2idx(SVM_label);
+y = species_num(1:end); 
+
+%80:20
+rand_num = randperm(38); 
+X_train = X(rand_num(1:30),:);
+y_train = y(rand_num(1:30),:);
+
+X_test = X(rand_num(31:end),:);
+y_test = y(rand_num(31:end),:);
+
+%CV Partition 
+
+c = cvpartition(y_train,'Kfold',5);
+
+% Feature Selection
+opts = statset('display','iter');
+fun = @(train_data, train_labels,test_data,test_labels)...
+       sum(predict(fitcsvm(train_data,train_labels,'KernelFunction','rbf'), test_data) == test_labels);
+[fs, history] = sequentialfs(fun, X_train,y_train,'cv',c,'options',opts,'nfeatures',1);
+
+%Best hyperparameters
+X_train_best = X_train(:,fs);
+
+Mdl = fitcsvm(X_train_best,y_train,'Standardize',true,'KernelFunction','RBF',...
+    'KernelScale','auto');
+
+%Test 
+CVSVMModel = crossval(Mdl);
+RPi_SVM = 1-kfoldLoss(CVSVMModel);
+
+X_best = X_test(:,fs);
+RP_SVM = [RP_SVM; 1-loss(Mdl,X_best,y_test)];
+RPc_SVM = [RPc_SVM; 1-RPi_SVM];
+end
+
+%Naive Bayes 
+
+a_NB = [];
+a_NB2 = [];
+a_NB3 = [];
+for w = 1:13
+    NB_data = [];
+    loop_NB = [transpose(R(w,:)); transpose(Le(w,:))];
+        for k = 1:38
+         if k <= 19
+            NB_data = [NB_data; 'Right'];
+         else
+            NB_data = [NB_data; 'Left '];
+         end
+        end
+B = loop_NB;
+C = categorical(cellstr(NB_data));
+labels = categories(C);
+tabulate(C)
+
+rng('default')
+
+cv = cvpartition(C,'HoldOut',0.20);
+
+trainInds = training(cv);
+testInds = test(cv);
+
+B_train_NB = B(trainInds,:);
+C_train_NB = C(trainInds);
+B_test = B(testInds,:);
+C_test = C(testInds);
+t = templateNaiveBayes();
+Mdl_NB = fitcnb(B_train_NB, C_train_NB,'ClassNames',{'Right','Left '},'CrossVal','on');
+Mdl_NB2 = fitcecoc(B_train_NB, C_train_NB,'CrossVal','on','Learners',t);
+Mdl_K = fitcnb(B_train_NB,C_train_NB,'DistributionNames','kernel');
+genError = kfoldLoss(Mdl_NB);
+genE2 = kfoldLoss(Mdl_NB2);
+genE3 = resubLoss(Mdl_K,'LossFun','ClassifErr');
+a_NB = [a_NB; 1-genError];
+a_NB2 = [a_NB2; 1-genE2];
+a_NB3 = [a_NB3; 1-genE3];
+end
+
+LP_NB = [];
+LP_NB2 = [];
+LP_NB3 = [];
+for w = 1:13
+    NB_data = [];
+    loop_NB = [transpose(Le(w,:)); transpose(P_p(w,:))];
+        for k = 1:38
+         if k <= 19
+            NB_data = [NB_data; 'Left'];
+         else
+            NB_data = [NB_data; 'Pass'];
+         end
+        end
+B = loop_NB;
+C = categorical(cellstr(NB_data));
+labels = categories(C);
+tabulate(C)
+
+rng('default')
+
+cv = cvpartition(C,'HoldOut',0.20);
+
+trainInds = training(cv);
+testInds = test(cv);
+
+B_train_NB = B(trainInds,:);
+C_train_NB = C(trainInds);
+B_test = B(testInds,:);
+C_test = C(testInds);
+t = templateNaiveBayes();
+Mdl_NB = fitcnb(B_train_NB, C_train_NB,'ClassNames',{'Left','Pass'},'CrossVal','on');
+Mdl_NB2 = fitcecoc(B_train_NB, C_train_NB,'CrossVal','on','Learners',t);
+Mdl_K = fitcnb(B_train_NB,C_train_NB,'DistributionNames','kernel');
+genError = kfoldLoss(Mdl_NB);
+genE2 = kfoldLoss(Mdl_NB2);
+genE3 = resubLoss(Mdl_K,'LossFun','ClassifErr');
+LP_NB = [LP_NB; 1-genError];
+LP_NB2 = [LP_NB2; 1-genE2];
+LP_NB3 = [LP_NB3; 1-genE3];
+end
+
+RP_NB = [];
+RP_NB2 = [];
+RP_NB3 = [];
+for w = 1:13
+    NB_data = [];
+    loop_NB = [transpose(R(w,:)); transpose(P_p(w,:))];
+        for k = 1:38
+         if k <= 19
+            NB_data = [NB_data; 'Right'];
+         else
+            NB_data = [NB_data; 'Pass '];
+         end
+        end
+B = loop_NB;
+C = categorical(cellstr(NB_data));
+labels = categories(C);
+tabulate(C)
+
+rng('default')
+
+cv = cvpartition(C,'HoldOut',0.20);
+
+trainInds = training(cv);
+testInds = test(cv);
+
+B_train_NB = B(trainInds,:);
+C_train_NB = C(trainInds);
+B_test = B(testInds,:);
+C_test = C(testInds);
+t = templateNaiveBayes();
+Mdl_NB = fitcnb(B_train_NB, C_train_NB,'ClassNames',{'Right','Pass '},'CrossVal','on');
+Mdl_NB2 = fitcecoc(B_train_NB, C_train_NB,'CrossVal','on','Learners',t);
+Mdl_K = fitcnb(B_train_NB,C_train_NB,'DistributionNames','kernel');
+genError = kfoldLoss(Mdl_NB);
+genE2 = kfoldLoss(Mdl_NB2);
+genE3 = resubLoss(Mdl_K,'LossFun','ClassifErr');
+RP_NB = [RP_NB; 1-genError];
+RP_NB2 = [RP_NB2; 1-genE2];
+RP_NB3 = [RP_NB3; 1-genE3];
+end
+
+%Results for Accuracy 
+
+LDA_results = [A_LDA LP_LDA RP_LDA];
+
+SVM_results = [RLc_SVM LPc_SVM RPc_SVM]; %chosen for accuracy
+
+NB_kernel_results = [a_NB3 LP_NB3 RP_NB3]; %Chosen for accuracy
+
+    
